@@ -1,9 +1,8 @@
-
-
-##################################################################################################
-# Siamese Neural Networks for One-Shot Image Recognition (tracey fork and instructions)
+#####################################################################################
+# Siamese Neural Networks for One-Shot Image Recognition (tracey fork + instructions)
 - I added `tracey.py` as a single .py file extracted and lightly modified from the jupyter notebook
 - I disabled 'cuda' since running on mac laptop
+
 
 # Setup:
 
@@ -18,13 +17,39 @@ pip3 install http://download.pytorch.org/whl/torch-0.2.0.post3-cp36-cp36m-macosx
 pip3 install torchvision;
 
 pip3 install matplotlib;
-mkdir -p ~/.matplotlib;
+mkdir -p  ~/.matplotlib;
 echo 'backend: TkAgg' >| ~/.matplotlib/matplotlibrc;
 
 pip3 install -r requirements.txt;
 python3 tracey.py;
 ```
 
+
+# my dataset (clay statues -- pictures of torsos) -- crop to heads:
+```bash
+DEST=$(pwd)/data/faces/training;
+mkdir -p $DEST;
+cd ~/dev/train/__masked;
+for i in */*.{png,jpg}; do
+  CROP='556x580+300+146!';
+  base=$(basename $i)
+  if [ "$base" = "c.png" ]; then
+    CROP='506x491+322+146!';
+  fi
+  mkdir -p $(dirname $DEST/$i);
+  convert $i -crop "$CROP" $DEST/$i  &&  echo -n .;
+done
+cd -
+```
+
+# move 10 random sets from 'training' to 'testing':
+```bash
+cd data/faces/;
+mkdir -p testing;
+mv testing/* training/;
+mv  $(/bin/ls -d training/* |gshuf |head -10)  testing/;
+cd -;
+```
 
 
 ---
