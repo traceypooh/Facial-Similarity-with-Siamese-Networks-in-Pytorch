@@ -18,10 +18,10 @@ import torch.nn.functional as F
 
 
 class Config():
-    training_dir = "./data/faces/training/"
-    testing_dir = "./data/faces/testing/"
+    training_dir = "./training/"
+    testing_dir = "./testing/"
     train_batch_size = 64
-    train_number_epochs = 3
+    train_number_epochs = 200
 
 
 
@@ -210,6 +210,7 @@ def testing(net):
     dataiter = iter(test_dataloader)
     x0,_,_ = next(dataiter)
 
+    best = []
     for i in range(10):
         _,x1,label2 = next(dataiter)
         concatenated = torch.cat((x0,x1),0)
