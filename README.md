@@ -21,8 +21,8 @@ mkdir -p  ~/.matplotlib;
 echo 'backend: TkAgg' >| ~/.matplotlib/matplotlibrc;
 
 pip3 install -r requirements.txt;
-python3 tracey.py;
 ```
+- if requirements fails, comment out 2 *torch* related requirements since installed separately
 
 
 # my dataset (clay statues -- pictures of torsos) -- crop to heads:
@@ -49,6 +49,12 @@ mkdir -p testing;
 mv testing/* training/;
 mv  $(/bin/ls -d training/* |gshuf |head -10)  testing/;
 cd -;
+```
+
+#run
+```bash
+source bin/activate;
+python3 tracey.py;
 ```
 
 
