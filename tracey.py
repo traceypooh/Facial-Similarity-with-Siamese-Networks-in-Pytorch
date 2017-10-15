@@ -178,7 +178,7 @@ def training():
             loss_contrastive.backward()
             optimizer.step()
             if i %10 == 0 :
-                print("Epoch number {}\n Current loss {}\n".format(epoch,loss_contrastive.data[0]))
+                print("Epoch {}.  Current loss: {}\n".format(epoch, loss_contrastive.data[0]))
                 iteration_number +=10
                 counter.append(iteration_number)
                 loss_history.append(loss_contrastive.data[0])
@@ -189,8 +189,8 @@ def training():
 
 
 def testing(net):
-    test_dataloader  = DataLoader(SiameseNetworkDataset(Config.testing_dir),  num_workers=6, batch_size=1)
-    train_dataloader = DataLoader(SiameseNetworkDataset(Config.training_dir), num_workers=6, batch_size=1)
+    test_dataloader  = DataLoader(SiameseNetworkDataset(Config.testing_dir),  shuffle=False, num_workers=6, batch_size=1)
+    train_dataloader = DataLoader(SiameseNetworkDataset(Config.training_dir), shuffle=False, num_workers=6, batch_size=1)
 
     n = 0
     for j, data0 in enumerate(test_dataloader, 0):
@@ -199,7 +199,7 @@ def testing(net):
 
         best = dict()
         for i, data1 in enumerate(train_dataloader, 0):
-            _,x1,_,xxx,file1 = data1
+            _,x1,_,_,file1 = data1
             file1 = file1[0]
 
             # output1,output2 = net(Variable(x0).cuda(), Variable(x1).cuda()) #tracey

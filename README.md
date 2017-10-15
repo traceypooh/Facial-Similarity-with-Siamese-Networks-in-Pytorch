@@ -27,7 +27,7 @@ pip3 install -r requirements.txt;
 
 # my dataset (clay statues -- pictures of torsos) -- crop to heads:
 ```bash
-DEST=$(pwd)/data/faces/training;
+DEST=$(pwd)/training;
 mkdir -p $DEST;
 cd ~/dev/train/__masked;
 for i in */*.{png,jpg}; do
@@ -42,14 +42,6 @@ done
 cd -
 ```
 
-# move 10 random sets from 'training' to 'testing':
-```bash
-cd data/faces/;
-mkdir -p testing;
-mv testing/* training/;
-mv  $(/bin/ls -d training/* |gshuf |head -10)  testing/;
-cd -;
-```
 
 #run
 ```bash
