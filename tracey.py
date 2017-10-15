@@ -25,9 +25,7 @@ class Config():
 
 
 
-
-
-def imshow(img,text='fixxxme',should_save=False):
+def imshow(img, text):
     #return # tracey
     npimg = img.numpy()
     plt.axis("off")
@@ -47,10 +45,10 @@ def show_plot(iteration,loss):
 
 class SiameseNetworkDataset(Dataset):
 
-    def __init__(self,imageFolderDataset,transform=None,should_invert=True):
-        self.imageFolderDataset = imageFolderDataset
-        self.transform = transform
-        self.should_invert = should_invert
+    def __init__(self, dir):
+        self.imageFolderDataset = dset.ImageFolder(root = dir)
+        self.transform = transforms.Compose([transforms.Scale((100,100)), transforms.ToTensor()])
+
 
     def __getitem__(self,index):
         img0_tuple = random.choice(self.imageFolderDataset.imgs)
@@ -71,10 +69,6 @@ class SiameseNetworkDataset(Dataset):
         img1 = Image.open(img1_tuple[0])
         img0 = img0.convert("L")
         img1 = img1.convert("L")
-
-        if self.should_invert:
-            img0 = PIL.ImageOps.invert(img0)
-            img1 = PIL.ImageOps.invert(img1)
 
         if self.transform is not None:
             img0 = self.transform(img0)
@@ -199,16 +193,11 @@ def training():
 
 
 def testing(net):
-    folder_dataset_test = dset.ImageFolder(root=Config.testing_dir)
-    siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset_test,
-                                            transform=transforms.Compose([transforms.Scale((100,100)),
-                                                                          transforms.ToTensor()
-                                                                          ])
-                                           ,should_invert=False)
+    siamese_dataset = SiameseNetworkDataset(Config.testing_dir)
 
-    test_dataloader = DataLoader(siamese_dataset,num_workers=6,batch_size=1,shuffle=True)
+    test_dataloader = DataLoader(siamese_dataset, num_workers=6, batch_size=1)
     dataiter = iter(test_dataloader)
-    x0,_,_ = next(dataiter)
+    x0,_,label1 = next(dataiter)
 
     best = []
     for i in range(10):
@@ -222,7 +211,7 @@ def testing(net):
         distf = euclidean_distance.cpu().data.numpy()[0][0]
         print("DIST: {:.2f}".format(distf))
 
-        imshow(torchvision.utils.make_grid(concatenated), 'Dissimilarity: {:.2f}'.format(distf))
+        imshow(torchvision.utils.make_grid(concatenated), '{} -v- {} Dissimilarity: {:.2f}'.format(label1, label2, distf))
 
 
 
@@ -234,20 +223,7 @@ def testing(net):
 #  MAIN
 ###################################################################################################
 
-
-folder_dataset = dset.ImageFolder(root=Config.training_dir)
-
-
-
-siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset,
-                                        transform=transforms.Compose([transforms.Scale((100,100)),
-                                                                      transforms.ToTensor()
-                                                                      ])
-                                       ,should_invert=False)
-
-
-
-
+siamese_dataset = SiameseNetworkDataset(Config.training_dir)
 vis_dataloader = DataLoader(siamese_dataset,
                         shuffle=True,
                         num_workers=8,
@@ -257,7 +233,7 @@ dataiter = iter(vis_dataloader)
 
 example_batch = next(dataiter)
 concatenated = torch.cat((example_batch[0],example_batch[1]),0)
-imshow(torchvision.utils.make_grid(concatenated))
+imshow(torchvision.utils.make_grid(concatenated), 'example batch')
 print(example_batch[2].numpy())
 
 
