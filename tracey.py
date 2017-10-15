@@ -21,7 +21,8 @@ class Config():
     training_dir = "./data/faces/training/"
     testing_dir = "./data/faces/testing/"
     train_batch_size = 64
-    train_number_epochs = 200
+    train_number_epochs = 3
+
 
 
 
@@ -83,35 +84,6 @@ class SiameseNetworkDataset(Dataset):
 
     def __len__(self):
         return len(self.imageFolderDataset.imgs)
-
-
-
-
-
-folder_dataset = dset.ImageFolder(root=Config.training_dir)
-
-
-
-siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset,
-                                        transform=transforms.Compose([transforms.Scale((100,100)),
-                                                                      transforms.ToTensor()
-                                                                      ])
-                                       ,should_invert=False)
-
-
-
-
-vis_dataloader = DataLoader(siamese_dataset,
-                        shuffle=True,
-                        num_workers=8,
-                        batch_size=8)
-dataiter = iter(vis_dataloader)
-
-
-example_batch = next(dataiter)
-concatenated = torch.cat((example_batch[0],example_batch[1]),0)
-imshow(torchvision.utils.make_grid(concatenated))
-print(example_batch[2].numpy())
 
 
 
@@ -183,69 +155,110 @@ class ContrastiveLoss(torch.nn.Module):
         return loss_contrastive
 
 
-train_dataloader = DataLoader(siamese_dataset,
-                        shuffle=True,
-                        num_workers=8,
-                        batch_size=Config.train_batch_size)
 
 
-print("TRAINED tracey")
-
-
-net = SiameseNetwork()#.cuda() #tracey
-criterion = ContrastiveLoss()
-optimizer = optim.Adam(net.parameters(),lr = 0.0005 )
+def training():
+    train_dataloader = DataLoader(siamese_dataset,
+                            shuffle=True,
+                            num_workers=8,
+                            batch_size=Config.train_batch_size)
 
 
 
-counter = []
-loss_history = []
-iteration_number= 0
+    net = SiameseNetwork()#.cuda() #tracey
+    criterion = ContrastiveLoss()
+    optimizer = optim.Adam(net.parameters(),lr = 0.0005 )
 
 
 
-for epoch in range(0,Config.train_number_epochs):
-    for i, data in enumerate(train_dataloader,0):
-        img0, img1 , label = data
-        # img0, img1 , label = Variable(img0).cuda(), Variable(img1).cuda() , Variable(label).cuda() #tracey
-        img0, img1 , label = Variable(img0), Variable(img1), Variable(label)
-        output1,output2 = net(img0,img1)
-        optimizer.zero_grad()
-        loss_contrastive = criterion(output1,output2,label)
-        loss_contrastive.backward()
-        optimizer.step()
-        if i %10 == 0 :
-            print("Epoch number {}\n Current loss {}\n".format(epoch,loss_contrastive.data[0]))
-            iteration_number +=10
-            counter.append(iteration_number)
-            loss_history.append(loss_contrastive.data[0])
-show_plot(counter,loss_history)
+    counter = []
+    loss_history = []
+    iteration_number= 0
+
+
+
+    for epoch in range(0,Config.train_number_epochs):
+        for i, data in enumerate(train_dataloader,0):
+            img0, img1 , label = data
+            # img0, img1 , label = Variable(img0).cuda(), Variable(img1).cuda() , Variable(label).cuda() #tracey
+            img0, img1 , label = Variable(img0), Variable(img1), Variable(label)
+            output1,output2 = net(img0,img1)
+            optimizer.zero_grad()
+            loss_contrastive = criterion(output1,output2,label)
+            loss_contrastive.backward()
+            optimizer.step()
+            if i %10 == 0 :
+                print("Epoch number {}\n Current loss {}\n".format(epoch,loss_contrastive.data[0]))
+                iteration_number +=10
+                counter.append(iteration_number)
+                loss_history.append(loss_contrastive.data[0])
+    show_plot(counter,loss_history)
+
+    return net
+
+
+
+def testing(net):
+    folder_dataset_test = dset.ImageFolder(root=Config.testing_dir)
+    siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset_test,
+                                            transform=transforms.Compose([transforms.Scale((100,100)),
+                                                                          transforms.ToTensor()
+                                                                          ])
+                                           ,should_invert=False)
+
+    test_dataloader = DataLoader(siamese_dataset,num_workers=6,batch_size=1,shuffle=True)
+    dataiter = iter(test_dataloader)
+    x0,_,_ = next(dataiter)
+
+    for i in range(10):
+        _,x1,label2 = next(dataiter)
+        concatenated = torch.cat((x0,x1),0)
+
+        # output1,output2 = net(Variable(x0).cuda(),Variable(x1).cuda()) #tracey
+        output1,output2 = net(Variable(x0),Variable(x1))
+        euclidean_distance = F.pairwise_distance(output1, output2)
+
+        distf = euclidean_distance.cpu().data.numpy()[0][0]
+        print("DIST: {:.2f}".format(distf))
+
+        imshow(torchvision.utils.make_grid(concatenated), 'Dissimilarity: {:.2f}'.format(distf))
 
 
 
 
 
 
-folder_dataset_test = dset.ImageFolder(root=Config.testing_dir)
-siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset_test,
+
+###################################################################################################
+#  MAIN
+###################################################################################################
+
+
+folder_dataset = dset.ImageFolder(root=Config.training_dir)
+
+
+
+siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset,
                                         transform=transforms.Compose([transforms.Scale((100,100)),
                                                                       transforms.ToTensor()
                                                                       ])
                                        ,should_invert=False)
 
-test_dataloader = DataLoader(siamese_dataset,num_workers=6,batch_size=1,shuffle=True)
-dataiter = iter(test_dataloader)
-x0,_,_ = next(dataiter)
 
-for i in range(10):
-    _,x1,label2 = next(dataiter)
-    concatenated = torch.cat((x0,x1),0)
 
-    # output1,output2 = net(Variable(x0).cuda(),Variable(x1).cuda()) #tracey
-    output1,output2 = net(Variable(x0),Variable(x1))
-    euclidean_distance = F.pairwise_distance(output1, output2)
 
-    distf = euclidean_distance.cpu().data.numpy()[0][0]
-    print("DIST: {:.2f}".format(distf))
+vis_dataloader = DataLoader(siamese_dataset,
+                        shuffle=True,
+                        num_workers=8,
+                        batch_size=8)
+dataiter = iter(vis_dataloader)
 
-    imshow(torchvision.utils.make_grid(concatenated), 'Dissimilarity: {:.2f}'.format(distf))
+
+example_batch = next(dataiter)
+concatenated = torch.cat((example_batch[0],example_batch[1]),0)
+imshow(torchvision.utils.make_grid(concatenated))
+print(example_batch[2].numpy())
+
+
+net = training()
+testing(net)
