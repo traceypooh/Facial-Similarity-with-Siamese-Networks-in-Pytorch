@@ -29,7 +29,8 @@ pip3 install -r requirements.txt;
 ```bash
 DEST=$(pwd)/training;
 mkdir -p $DEST;
-cd ~/dev/train/__masked;
+git clone https://github.com/traceypooh/mini-train;
+cd mini-train/__masked;
 for i in */*.{png,jpg}; do
   CROP='556x580+300+146!';
   base=$(basename $i)
